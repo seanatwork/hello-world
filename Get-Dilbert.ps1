@@ -2,8 +2,8 @@ function get-dilbert{
 [CmdletBinding()]
 param
 (
-[Parameter(ParameterSetName='PickDate')][string]$date,
-[Parameter(ParameterSetName='GetRandom')][switch]$Random
+[string]$date =$((get-date).toshortdatestring()),
+[switch]$Random
 )
 
     if ($Random) { 
