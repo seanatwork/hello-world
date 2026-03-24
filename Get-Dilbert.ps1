@@ -22,19 +22,29 @@ param
         }
         else{ $date = "$(($day).year)-0$(($day).month)-$(($day).day)"
         }
-        $url = "http://dilbert.com/strip/$date"
+        $url = "https://fridayfun.net/dilbert-$date"
 
         $r = Invoke-WebRequest -Uri $url -TimeoutSec 30 -UseBasicParsing
        
         #Name of comic to set filename
-        $file = $date + $($r.IMAGES | ? Class -eq "img-responsive img-comic").alt
+        $file = "$date-dilbert"
         
-        #Comic source to download
-        $str = ($r.links | ? title -Like "*Click*").outerhtml
-        $str -match "src=.+`"" | Out-Null
-        $str = $Matches.Values
-        $image = $str.split('=')[1]
+        #Comic source to download - extract image URL from page
+        $imagePattern = '<img[^>]+src="([^"]+\.webp[^"]*)"'
+        if ($r.Content -match $imagePattern) {
+            $imageUrl = $Matches[1]
+            # Make URL absolute if it's relative
+            if ($imageUrl -notmatch '^https?://') {
+                $imageUrl = "https://fridayfun.net" + $imageUrl
+            }
+        } else {
+            throw "Could not find comic image on the page"
+        }
         #download the image
-        Invoke-WebRequest -uri $($image.Replace('"',"") +'.gif') -OutFile $HOME\documents\dilbert\$file.gif
-        Invoke-Item $HOME\documents\dilbert\$file.gif
+        $dilbertPath = "$HOME\Pictures\Dilbert"
+        if (-not (Test-Path $dilbertPath)) {
+            New-Item -ItemType Directory -Path $dilbertPath -Force | Out-Null
+        }
+        Invoke-WebRequest -uri $imageUrl -OutFile "$dilbertPath\$file.webp"
+        Invoke-Item "$dilbertPath\$file.webp"
             }
